@@ -19,6 +19,10 @@ RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
     done; \
     update-ca-certificates; \
     rm -rf /tmp/ssl
+
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt    
+
 USER klangk
 
 # Mount point for run.sh
