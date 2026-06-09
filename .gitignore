@@ -6,3 +6,4 @@ ssl/*.crt
 oidc.yaml
 .env
 run.sh
+data/*
