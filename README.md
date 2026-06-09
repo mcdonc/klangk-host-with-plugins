@@ -46,7 +46,7 @@ The resulting image is tagged `ghcr.io/mcdonc/klangk/klangk-host-custom:latest` 
 
 ## Custom CA Certificates
 
-Place `.pem` files in the `ssl/` directory (or set `KLANGK_SSL_CERT_DIR`). They will be installed into the system CA store of both the host and workspace images. This is needed when services like Logfire use certificates signed by a private CA. The `ssl/` directory is gitignored — certs must be provided at build time.
+Place `.pem` or `.crt` files in the `ssl/` directory (or set `KLANGK_SSL_CERT_DIR`). They will be installed into the system CA store of both the host and workspace images. This is needed when services like Logfire use certificates signed by a private CA. The `ssl/` directory is gitignored — certs must be provided at build time.
 
 ## Running
 

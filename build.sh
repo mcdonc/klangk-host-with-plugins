@@ -41,11 +41,12 @@ else
 fi
 
 # 2. If custom CA certs are provided, patch the workspace Dockerfile to include them
-if ls "$SSL_CERT_DIR"/*.pem 1>/dev/null 2>&1; then
+if ls "$SSL_CERT_DIR"/*.pem 2>/dev/null || ls "$SSL_CERT_DIR"/*.crt 2>/dev/null; then
   echo "=== Injecting custom CA certs into workspace image ==="
   WORKSPACE_SSL_DIR="$KLANGK_DIR/src/containers/workspace/ssl"
   mkdir -p "$WORKSPACE_SSL_DIR"
-  cp "$SSL_CERT_DIR"/*.pem "$WORKSPACE_SSL_DIR/"
+  cp "$SSL_CERT_DIR"/*.pem "$WORKSPACE_SSL_DIR/" 2>/dev/null || true
+  cp "$SSL_CERT_DIR"/*.crt "$WORKSPACE_SSL_DIR/" 2>/dev/null || true
 
   # Append cert installation to the workspace Dockerfile if not already patched
   WS_DOCKERFILE="$KLANGK_DIR/src/containers/workspace/Dockerfile"
@@ -55,10 +56,11 @@ if ls "$SSL_CERT_DIR"/*.pem 1>/dev/null 2>&1; then
 # Inject custom CA certs
 COPY ssl/ /tmp/ssl/
 USER root
-RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ && \
+RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
+    cp /tmp/ssl/*.crt /usr/local/share/ca-certificates/ 2>/dev/null; \
     for f in /usr/local/share/ca-certificates/*.pem; do \
-      mv "$f" "${f%.pem}.crt"; \
-    done && \
+      [ -f "$f" ] && mv "$f" "${f%.pem}.crt"; \
+    done; \
     update-ca-certificates && \
     rm -rf /tmp/ssl
 USER clanker

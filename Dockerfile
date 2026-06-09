@@ -12,14 +12,12 @@ FROM ghcr.io/mcdonc/klangk/klangk-host:latest
 # Add custom CA certificate (if provided)
 COPY ssl/ /tmp/ssl/
 USER root
-RUN if ls /tmp/ssl/*.pem 1>/dev/null 2>&1; then \
-      cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ && \
-      # ca-certificates expects .crt extension
-      for f in /usr/local/share/ca-certificates/*.pem; do \
-        mv "$f" "${f%.pem}.crt"; \
-      done && \
-      update-ca-certificates; \
-    fi && \
+RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
+    cp /tmp/ssl/*.crt /usr/local/share/ca-certificates/ 2>/dev/null; \
+    for f in /usr/local/share/ca-certificates/*.pem; do \
+      [ -f "$f" ] && mv "$f" "${f%.pem}.crt"; \
+    done; \
+    update-ca-certificates; \
     rm -rf /tmp/ssl
 USER klangk
 
