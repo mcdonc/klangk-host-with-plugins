@@ -64,3 +64,17 @@ docker run -d \
   -e KLANGK_JWT_SECRET=change-me \
   ghcr.io/mcdonc/klangk/klangk-host-custom
 ```
+
+### OIDC Authentication
+
+To enable OIDC login, mount a config file and set `KLANGK_OIDC_CONFIG`:
+
+```bash
+docker run -d \
+  ...
+  -v /path/to/oidc.json:/home/klangk/oidc.json:ro \
+  -e KLANGK_OIDC_CONFIG=/home/klangk/oidc.json \
+  ghcr.io/mcdonc/klangk/klangk-host-custom
+```
+
+See the [OIDC section in HACKING.md](https://github.com/mcdonc/klangk/blob/main/HACKING.md#oidc-openid-connect) for the config file format.
