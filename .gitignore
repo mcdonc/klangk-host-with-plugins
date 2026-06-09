@@ -1,3 +1,4 @@
 .klangk/
 .plugins/
 web/
+ssl/*.pem

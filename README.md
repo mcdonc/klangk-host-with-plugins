@@ -42,6 +42,11 @@ The resulting image is tagged `ghcr.io/mcdonc/klangk/klangk-host-custom:latest` 
 | `KLANGK_REPO` | `https://github.com/mcdonc/klangk.git` | Klangk repo URL |
 | `KLANGK_HOST_IMAGE` | `ghcr.io/mcdonc/klangk/klangk-host-custom` | Output image name |
 | `KLANGK_PLATFORM` | `linux/amd64` | Target platform |
+| `KLANGK_SSL_CERT_DIR` | `./ssl` | Directory containing `.pem` CA certs to inject into both images |
+
+## Custom CA Certificates
+
+Place `.pem` files in the `ssl/` directory (or set `KLANGK_SSL_CERT_DIR`). They will be installed into the system CA store of both the host and workspace images. This is needed when services like Logfire use certificates signed by a private CA. The `ssl/` directory is gitignored — certs must be provided at build time.
 
 ## Running
 
