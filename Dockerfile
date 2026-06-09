@@ -21,6 +21,9 @@ RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
     rm -rf /tmp/ssl
 USER klangk
 
+# Mount point for run.sh
+RUN mkdir -p /home/klangk/mount
+
 # Replace Flutter web build (rebuilt with Dart plugins)
 COPY --chown=klangk:klangk web /home/klangk/src/frontend/build/web
 
