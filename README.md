@@ -1,0 +1,58 @@
+# klangk-host-with-plugins
+
+Builds a custom [Klangk](https://github.com/mcdonc/klangk) host container image with plugins baked in.
+
+## Plugins
+
+Edit `plugins.yaml` to add or remove plugins. The default set includes:
+
+- celebrate, beep, pig-latin, word-count, browser-fetch, bobdobbs (built-in)
+- soliplex (external)
+
+## Prerequisites
+
+- [Nix](https://nixos.org/download/) with [devenv](https://devenv.sh/)
+- Docker
+- SSH key with access to the git repos listed in `plugins.yaml`
+
+## Build
+
+```bash
+./build.sh
+```
+
+This will:
+
+1. Clone the klangk repo (into `.klangk/`)
+2. Fetch plugins listed in `plugins.yaml`
+3. Rebuild the Flutter web frontend (with Dart plugin UI)
+4. Rebuild the workspace container image (with plugin extensions and tools)
+5. Build a Docker image extending `ghcr.io/mcdonc/klangk/klangk-host:latest`
+
+The resulting image is tagged `ghcr.io/mcdonc/klangk/klangk-host-custom:latest` by default. Override with `KLANGK_HOST_IMAGE`.
+
+## Options
+
+| Variable | Default | Description |
+|---|---|---|
+| `KLANGK_REF` | `main` | Klangk branch or tag to build against |
+| `KLANGK_REPO` | `https://github.com/mcdonc/klangk.git` | Klangk repo URL |
+| `KLANGK_HOST_IMAGE` | `ghcr.io/mcdonc/klangk/klangk-host-custom` | Output image name |
+| `KLANGK_PLATFORM` | `linux/amd64` | Target platform |
+
+## Running
+
+```bash
+docker run -d \
+  -p 8995:8995 \
+  -v /your/data/path:/home/klangk/data \
+  --cap-add SYS_ADMIN \
+  --device /dev/fuse \
+  --device /dev/net/tun \
+  --security-opt seccomp=unconfined \
+  --security-opt systempaths=unconfined \
+  -e KLANGK_DEFAULT_USER=admin@example.com \
+  -e KLANGK_DEFAULT_PASSWORD=admin \
+  -e KLANGK_JWT_SECRET=change-me \
+  ghcr.io/mcdonc/klangk/klangk-host-custom
+```
