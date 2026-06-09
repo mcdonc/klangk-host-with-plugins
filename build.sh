@@ -63,7 +63,7 @@ RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
     done; \
     update-ca-certificates && \
     rm -rf /tmp/ssl
-USER clanker
+USER klangk
 PATCH
   fi
 fi
