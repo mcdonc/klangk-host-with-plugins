@@ -22,11 +22,15 @@ trap 'rm -rf "$WORKSPACE_DIR"' EXIT
 # 1. Clone or update klangk repo
 echo "=== Cloning klangk ($KLANGK_REF) ==="
 if [ -d "$KLANGK_DIR/.git" ]; then
-  git -C "$KLANGK_DIR" fetch origin
+  git -C "$KLANGK_DIR" fetch origin --tags
   git -C "$KLANGK_DIR" checkout "$KLANGK_REF"
-  git -C "$KLANGK_DIR" pull --ff-only || true
+  # Pull only if on a branch (not a detached tag/SHA)
+  if git -C "$KLANGK_DIR" symbolic-ref -q HEAD >/dev/null 2>&1; then
+    git -C "$KLANGK_DIR" pull --ff-only || true
+  fi
 else
-  git clone --branch "$KLANGK_REF" "$KLANGK_REPO" "$KLANGK_DIR"
+  git clone "$KLANGK_REPO" "$KLANGK_DIR"
+  git -C "$KLANGK_DIR" checkout "$KLANGK_REF"
 fi
 
 # 2. Install plugins into a staging directory
