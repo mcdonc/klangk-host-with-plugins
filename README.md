@@ -21,7 +21,7 @@ Edit `plugins.yaml` to add or remove plugins. The default set includes:
 ./build.sh
 
 # Or pin to a specific release:
-KLANGK_REF=v2026.06.09 ./build.sh
+KLANGK_REF=v2026.06.09.1 ./build.sh
 ```
 
 This will:
