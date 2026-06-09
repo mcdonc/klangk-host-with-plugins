@@ -19,6 +19,9 @@ Edit `plugins.yaml` to add or remove plugins. The default set includes:
 
 ```bash
 ./build.sh
+
+# Or pin to a specific release:
+KLANGK_REF=v2026.06.09 ./build.sh
 ```
 
 This will:
@@ -35,7 +38,7 @@ The resulting image is tagged `ghcr.io/mcdonc/klangk/klangk-host-custom:latest` 
 
 | Variable | Default | Description |
 |---|---|---|
-| `KLANGK_REF` | `main` | Klangk branch or tag to build against |
+| `KLANGK_REF` | `main` | Klangk branch, tag, or commit SHA to build against |
 | `KLANGK_REPO` | `https://github.com/mcdonc/klangk.git` | Klangk repo URL |
 | `KLANGK_HOST_IMAGE` | `ghcr.io/mcdonc/klangk/klangk-host-custom` | Output image name |
 | `KLANGK_PLATFORM` | `linux/amd64` | Target platform |
