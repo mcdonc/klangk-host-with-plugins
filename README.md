@@ -67,13 +67,13 @@ docker run -d \
 
 ### OIDC Authentication
 
-To enable OIDC login, mount a config file and set `KLANGK_OIDC_CONFIG`:
+To enable OIDC login, place your OIDC config at `oidc.yaml` in this repo (gitignored), then mount it at runtime:
 
 ```bash
 docker run -d \
   ...
-  -v /path/to/oidc.json:/home/klangk/oidc.json:ro \
-  -e KLANGK_OIDC_CONFIG=/home/klangk/oidc.json \
+  -v /path/to/oidc.yaml:/home/klangk/oidc.yaml:ro \
+  -e KLANGK_OIDC_CONFIG=/home/klangk/oidc.yaml \
   ghcr.io/mcdonc/klangk/klangk-host-custom
 ```
 
