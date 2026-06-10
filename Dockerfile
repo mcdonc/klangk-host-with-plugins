@@ -7,7 +7,7 @@
 # Usage:
 #   ./build.sh
 #
-FROM ghcr.io/mcdonc/klangk/klangk-host:latest
+FROM klangk-host:latest
 
 # Add custom CA certificate (if provided)
 COPY ssl/ /tmp/ssl/
@@ -27,6 +27,9 @@ USER klangk
 
 # Mount point for run.sh
 RUN mkdir -p /home/klangk/mount
+
+# Custom OIDC login hook (PYTHONPATH includes /home/klangk/src/backend)
+COPY --chown=klangk:klangk login_hook.py /home/klangk/src/backend/login_hook.py
 
 # Replace Flutter web build (rebuilt with Dart plugins)
 COPY --chown=klangk:klangk web /home/klangk/src/frontend/build/web

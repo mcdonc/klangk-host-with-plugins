@@ -29,6 +29,8 @@ mkdir -p "$SCRIPT_DIR/ssl"
 # 1. Clone or update klangk repo
 echo "=== Cloning klangk ($KLANGK_REF) ==="
 if [ -d "$KLANGK_DIR/.git" ]; then
+  git -C "$KLANGK_DIR" reset --hard HEAD
+  git -C "$KLANGK_DIR" clean -fd
   git -C "$KLANGK_DIR" fetch origin --tags
   git -C "$KLANGK_DIR" checkout "$KLANGK_REF"
   # Pull only if on a branch (not a detached tag/SHA)
@@ -40,32 +42,10 @@ else
   git -C "$KLANGK_DIR" checkout "$KLANGK_REF"
 fi
 
-# 2. If custom CA certs are provided, patch the workspace Dockerfile to include them
+# 2. Detect whether we need to layer CA certs onto the workspace image later
+HAVE_CUSTOM_CERTS=false
 if ls "$SSL_CERT_DIR"/*.pem 2>/dev/null || ls "$SSL_CERT_DIR"/*.crt 2>/dev/null; then
-  echo "=== Injecting custom CA certs into workspace image ==="
-  WORKSPACE_SSL_DIR="$KLANGK_DIR/src/containers/workspace/ssl"
-  mkdir -p "$WORKSPACE_SSL_DIR"
-  cp "$SSL_CERT_DIR"/*.pem "$WORKSPACE_SSL_DIR/" 2>/dev/null || true
-  cp "$SSL_CERT_DIR"/*.crt "$WORKSPACE_SSL_DIR/" 2>/dev/null || true
-
-  # Append cert installation to the workspace Dockerfile if not already patched
-  WS_DOCKERFILE="$KLANGK_DIR/src/containers/workspace/Dockerfile"
-  if ! grep -q 'custom CA certs' "$WS_DOCKERFILE"; then
-    cat >> "$WS_DOCKERFILE" <<'PATCH'
-
-# Inject custom CA certs
-COPY ssl/ /tmp/ssl/
-USER root
-RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
-    cp /tmp/ssl/*.crt /usr/local/share/ca-certificates/ 2>/dev/null; \
-    for f in /usr/local/share/ca-certificates/*.pem; do \
-      [ -f "$f" ] && mv "$f" "${f%.pem}.crt"; \
-    done; \
-    update-ca-certificates && \
-    rm -rf /tmp/ssl
-USER klangk
-PATCH
-  fi
+  HAVE_CUSTOM_CERTS=true
 fi
 
 # 3. Install plugins into a staging directory
@@ -94,15 +74,46 @@ devenv shell -- bash -c "
   echo '--- Building workspace image ---'
   bash scripts/build-workspace-image.sh
 
-  # Export workspace image as tarball
+  # Layer custom CA certs onto the workspace image if present
   WORKSPACE_IMAGE=\"\${KLANGK_IMAGE_NAME:-klangk-workspace}\"
   PODMAN=\"\${KLANGK_PODMAN_BIN:-podman}\"
   POLICY_ARGS=()
   if [ -n \"\${KLANGK_SIGNATURE_POLICY:-}\" ]; then
     POLICY_ARGS+=(--signature-policy \"\${KLANGK_SIGNATURE_POLICY}\")
   fi
+  if [ '$HAVE_CUSTOM_CERTS' = true ]; then
+    echo '--- Layering custom CA certs onto workspace image ---'
+    WS_CERT_DIR=\$(mktemp -d)
+    trap 'rm -rf \"\$WS_CERT_DIR\"' EXIT
+    cp '$SSL_CERT_DIR'/*.pem \"\$WS_CERT_DIR/\" 2>/dev/null || true
+    cp '$SSL_CERT_DIR'/*.crt \"\$WS_CERT_DIR/\" 2>/dev/null || true
+    cat > \"\$WS_CERT_DIR/Dockerfile\" <<'CERTDF'
+ARG BASE
+FROM \$BASE
+COPY *.pem *.crt /tmp/ssl/
+USER root
+RUN cp /tmp/ssl/*.pem /usr/local/share/ca-certificates/ 2>/dev/null; \
+    cp /tmp/ssl/*.crt /usr/local/share/ca-certificates/ 2>/dev/null; \
+    for f in /usr/local/share/ca-certificates/*.pem; do \
+      [ -f \"\$f\" ] && mv \"\$f\" \"\${f%.pem}.crt\"; \
+    done; \
+    update-ca-certificates && \
+    rm -rf /tmp/ssl
+USER klangk
+CERTDF
+    \"\$PODMAN\" build \"\${POLICY_ARGS[@]}\" \
+      --build-arg BASE=\"\$WORKSPACE_IMAGE\" \
+      -t \"\$WORKSPACE_IMAGE:latest\" \
+      \"\$WS_CERT_DIR\"
+  fi
+
+  # Export workspace image as tarball
   echo '--- Exporting workspace image ---'
   \"\$PODMAN\" save \"\${POLICY_ARGS[@]}\" -o '$WORKSPACE_DIR/workspace.tar' \"\$WORKSPACE_IMAGE\"
+
+  # Build host image from source (provides up-to-date backend code)
+  echo '--- Building host image from source ---'
+  bash scripts/build-host-image.sh
 "
 
 # 4. Copy Flutter web build output to this directory for Docker context

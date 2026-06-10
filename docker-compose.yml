@@ -30,6 +30,7 @@ services:
       KLANGK_OIDC_CONFIG: "${KLANGK_OIDC_CONFIG:-/home/klangk/oidc.yaml}"
       KLANGK_AUTH_MODES: "both"
       KLANGK_DISABLE_REGISTRATION: "1"
+      KLANGK_OIDC_LOGIN_HOOK: "login_hook.require_invitation"
       KLANGK_DNS_SERVERS: "${KLANGK_DNS_SERVERS:-100.100.100.100,8.8.8.8}"
       KLANGK_ALLOWED_MOUNT_ROOTS: "${KLANGK_ALLOWED_MOUNT_ROOTS:-/var/lib/klangk/mount}"
       KLANGK_SMTP_HOST: "${KLANGK_SMTP_HOST}"
