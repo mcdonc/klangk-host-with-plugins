@@ -44,7 +44,8 @@ services:
       SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
       REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
     volumes:
-      - ./oidc.yaml:/home/klangk/oidc.yaml:ro      
+      - ./oidc.yaml:/home/klangk/oidc.yaml:ro
+      - ./cacert.pem:/home/klangk/cacert.pem:ro
       # ensure data and mount volumes are created ahead of time.  must be owned by 1000:1000
       - type: bind
         source: ./data

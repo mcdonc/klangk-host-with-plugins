@@ -4,6 +4,7 @@ web/
 ssl/*.pem
 ssl/*.crt
 oidc.yaml
+cacert.pem
 .env
 run.sh
 data/*

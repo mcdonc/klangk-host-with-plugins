@@ -77,4 +77,6 @@ docker run -d \
   ghcr.io/mcdonc/klangk/klangk-host-custom
 ```
 
+If your OIDC provider requires a custom CA certificate (e.g. `ca_cert: cacert.pem` in `oidc.yaml`), place the PEM file at `cacert.pem` in this repo (gitignored). Both `docker-compose.yml` and `run.sh` mount it into the container at `/home/klangk/cacert.pem`.
+
 See the [OIDC section in HACKING.md](https://github.com/mcdonc/klangk/blob/main/HACKING.md#oidc-openid-connect) for the config file format.
