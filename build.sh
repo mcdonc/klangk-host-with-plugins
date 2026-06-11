@@ -43,7 +43,23 @@ else
   git -C "$KLANGK_DIR" checkout "$KLANGK_REF"
 fi
 
-# 2. Install plugins into a staging directory
+# 2. Apply branding overlay (replaces the upstream logo widget + ships logo asset).
+# Runs after the git reset/clean so our changes are re-applied on every build.
+echo "=== Applying branding overlay ==="
+BRANDING_ASSET_DIR="$KLANGK_DIR/src/frontend/assets/branding"
+mkdir -p "$BRANDING_ASSET_DIR"
+cp "$SCRIPT_DIR/logo.png" "$BRANDING_ASSET_DIR/logo.png"
+cp "$SCRIPT_DIR/klangk_logo.dart" \
+   "$KLANGK_DIR/src/frontend/lib/widgets/klangk_logo.dart"
+# Upstream test asserts the old procedurally-drawn widget; drop it.
+rm -f "$KLANGK_DIR/src/frontend/test/klangk_logo_test.dart"
+# Register the branding asset dir in pubspec.yaml if not already declared.
+PUBSPEC="$KLANGK_DIR/src/frontend/pubspec.yaml"
+if ! grep -q "assets/branding/" "$PUBSPEC"; then
+  sed -i '/^    - assets\/fonts\//a\    - assets/branding/' "$PUBSPEC"
+fi
+
+# 3. Install plugins into a staging directory
 PLUGINS_DIR="$SCRIPT_DIR/.plugins"
 echo "=== Fetching plugins ==="
 rm -rf "$PLUGINS_DIR"
@@ -58,9 +74,14 @@ DEVENV_CMD=(devenv --quiet -O dotenv.enable:bool false shell --no-tui --)
 "${DEVENV_CMD[@]}" bash "$SCRIPT_DIR/build-inner.sh" \
   "$PLUGINS_DIR" "$WORKSPACE_DIR" "$SSL_CERT_DIR"
 
-# 4. Build host image from source (needs devenv for venv build context)
-echo "=== Building host image from source ==="
-"${DEVENV_CMD[@]}" bash scripts/build-host-image.sh
+# 4. Build host image from source (needs devenv for venv build context).
+# build-host-image.sh re-runs flutterbuildweb.sh, which re-runs
+# import_dart_plugins.py — so KLANGK_PLUGINS_DIR must be forwarded into
+# this devenv shell too, otherwise it falls back to devenv.nix's default
+# (.devenv/state/klangk/plugins), scans an empty dir, overwrites the
+# frontend's pubspec_overrides symlink to point at an empty .dart/
+# package, and `pub get` drops all the plugin deps.
+"${DEVENV_CMD[@]}" env KLANGK_PLUGINS_DIR="$PLUGINS_DIR" bash scripts/build-host-image.sh
 
 # 5. Copy Flutter web build output to this directory for Docker context
 echo "=== Preparing Docker build context ==="

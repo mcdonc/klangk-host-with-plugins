@@ -8,3 +8,5 @@ cacert.pem
 .env
 run.sh
 data/*
+logo.png
+consent-banner.md

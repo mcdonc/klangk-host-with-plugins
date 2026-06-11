@@ -32,12 +32,14 @@ services:
       KLANGK_DISABLE_REGISTRATION: "1"
       KLANGK_OIDC_LOGIN_HOOK: "login_hook.require_invitation"
       KLANGK_DNS_SERVERS: "${KLANGK_DNS_SERVERS:-100.100.100.100,8.8.8.8}"
-      KLANGK_ALLOWED_MOUNT_ROOTS: "${KLANGK_ALLOWED_MOUNT_ROOTS:-/var/lib/klangk/mount}"
+      KLANGK_ALLOWED_MOUNT_ROOTS: "${KLANGK_ALLOWED_MOUNT_ROOTS:-/home/klangk/mount}"
       KLANGK_SMTP_HOST: "${KLANGK_SMTP_HOST}"
       KLANGK_SMTP_USER: "${KLANGK_SMTP_USER}"
       KLANGK_SMTP_PASSWORD: "${KLANGK_SMTP_PASSWORD}"
       KLANGK_SMTP_FROM: "${KLANGK_SMTP_FROM}"
       KLANGK_INSTANCE_ID: "${KLANGK_INSTANCE_ID:-default}"
+      KLANGK_LOGIN_BANNER_TITLE: "${KLANGK_LOGIN_BANNER_TITLE:-}"
+      KLANGK_LOGIN_BANNER: "${KLANGK_LOGIN_BANNER:-}"
       KLANGK_PREVENT_INSECURE_JWT_SECRET: "1"
       # Point Python TLS at the OS trust store, which includes the Enfold/RAG demo CA
       # baked in via /usr/local/share/ca-certificates/. Without these, requests/urllib3
@@ -47,6 +49,7 @@ services:
     volumes:
       - ./oidc.yaml:/home/klangk/oidc.yaml:ro
       - ./cacert.pem:/home/klangk/cacert.pem:ro
+      - ./consent-banner.md:/home/klangk/consent-banner.md:ro
       # ensure data and mount volumes are created ahead of time.  must be owned by 1000:1000
       - type: bind
         source: ./data
