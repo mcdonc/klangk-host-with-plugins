@@ -43,13 +43,7 @@ else
   git -C "$KLANGK_DIR" checkout "$KLANGK_REF"
 fi
 
-# 2. Detect whether we need to layer CA certs onto the workspace image later
-HAVE_CUSTOM_CERTS=false
-if ls "$SSL_CERT_DIR"/*.pem 2>/dev/null || ls "$SSL_CERT_DIR"/*.crt 2>/dev/null; then
-  HAVE_CUSTOM_CERTS=true
-fi
-
-# 3. Install plugins into a staging directory
+# 2. Install plugins into a staging directory
 PLUGINS_DIR="$SCRIPT_DIR/.plugins"
 echo "=== Fetching plugins ==="
 rm -rf "$PLUGINS_DIR"
@@ -58,50 +52,22 @@ cp "$SCRIPT_DIR/plugins.yaml" "$PLUGINS_DIR/plugins.yaml"
 
 cd "$KLANGK_DIR"
 
+DEVENV_CMD=(devenv --quiet -O dotenv.enable:bool false shell --no-tui --)
+
 # Run everything inside devenv shell for access to flutter, podman, python, etc.
-devenv shell -- bash -c "
-  set -euo pipefail
-  export KLANGK_PLUGINS_DIR='$PLUGINS_DIR'
+"${DEVENV_CMD[@]}" bash "$SCRIPT_DIR/build-inner.sh" \
+  "$PLUGINS_DIR" "$WORKSPACE_DIR" "$SSL_CERT_DIR"
 
-  # Fetch plugins
-  echo '--- Fetching plugins ---'
-  python3 scripts/update_plugins.py
+# 4. Build host image from source (needs devenv for venv build context)
+echo "=== Building host image from source ==="
+"${DEVENV_CMD[@]}" bash scripts/build-host-image.sh
 
-  # Build Flutter web (imports Dart plugins, rebuilds frontend)
-  echo '--- Building Flutter web ---'
-  bash scripts/flutterbuildweb.sh
-
-  # Build workspace image (stages extensions/tools, builds image)
-  echo '--- Building workspace image ---'
-  bash scripts/build-workspace-image.sh
-
-  # Layer custom CA certs onto the workspace image if present
-  if [ '$HAVE_CUSTOM_CERTS' = true ]; then
-    echo '--- Layering custom CA certs onto workspace image ---'
-    bash '$SCRIPT_DIR/layer-workspace-certs.sh' '$SSL_CERT_DIR'
-  fi
-
-  # Export workspace image as tarball
-  WORKSPACE_IMAGE=\"\${KLANGK_IMAGE_NAME:-klangk-workspace}\"
-  PODMAN=\"\${KLANGK_PODMAN_BIN:-podman}\"
-  POLICY_ARGS=()
-  if [ -n \"\${KLANGK_SIGNATURE_POLICY:-}\" ]; then
-    POLICY_ARGS+=(--signature-policy \"\${KLANGK_SIGNATURE_POLICY}\")
-  fi
-  echo '--- Exporting workspace image ---'
-  \"\$PODMAN\" save \"\${POLICY_ARGS[@]}\" -o '$WORKSPACE_DIR/workspace.tar' \"\$WORKSPACE_IMAGE\"
-
-  # Build host image from source (provides up-to-date backend code)
-  echo '--- Building host image from source ---'
-  bash scripts/build-host-image.sh
-"
-
-# 4. Copy Flutter web build output to this directory for Docker context
+# 5. Copy Flutter web build output to this directory for Docker context
 echo "=== Preparing Docker build context ==="
 rm -rf "$SCRIPT_DIR/web"
 cp -r "$KLANGK_DIR/src/frontend/build/web" "$SCRIPT_DIR/web"
 
-# 5. Build the custom host image
+# 6. Build the custom host image
 echo "=== Building custom host image ==="
 IMAGE="${KLANGK_HOST_IMAGE:-ghcr.io/mcdonc/klangk/klangk-host-custom}"
 
